@@ -15,6 +15,7 @@ from datetime import datetime
 
 from homeassistant.components import mqtt
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt as dt_util
 
@@ -107,6 +108,18 @@ class Board:
         await mqtt.async_publish(
             self.hass, f"{self.topic_base}/in/r{number}", "ON" if on else "OFF"
         )
+
+    async def async_set_all_outputs(self, on: bool) -> None:
+        """Command every Output at once (All on / All off)."""
+        count = self._output_count
+        if not count:
+            raise HomeAssistantError("The number of Outputs is not known yet")
+        status = "ON" if on else "OFF"
+        payload = " ".join(
+            f'{{"type":"ON/OFF","idx":"{n}","status":"{status}","time":"0","pass":"0"}}'
+            for n in range(1, count + 1)
+        )
+        await mqtt.async_publish(self.hass, f"{self.topic_base}/in/control", payload)
 
     # -- incoming messages -------------------------------------------------------
 
