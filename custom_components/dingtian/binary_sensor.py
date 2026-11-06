@@ -8,11 +8,10 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .board import Board
-from .const import DOMAIN
+from .entity import BoardEntity
 
 
 async def async_setup_entry(
@@ -36,19 +35,7 @@ async def async_setup_entry(
     entry.async_on_unload(board.async_add_listener(add_missing_inputs))
 
 
-class _BoardBinarySensor(BinarySensorEntity):
-    _attr_has_entity_name = True
-    _attr_should_poll = False
-
-    def __init__(self, board: Board) -> None:
-        self._board = board
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, board.serial)})
-
-    async def async_added_to_hass(self) -> None:
-        self.async_on_remove(self._board.async_add_listener(self.async_write_ha_state))
-
-
-class InputBinarySensor(_BoardBinarySensor):
+class InputBinarySensor(BoardEntity, BinarySensorEntity):
     def __init__(self, board: Board, number: int) -> None:
         super().__init__(board)
         self._number = number
@@ -64,7 +51,7 @@ class InputBinarySensor(_BoardBinarySensor):
         return self._board.input_is_on(self._number)
 
 
-class BoardConnectivity(_BoardBinarySensor):
+class BoardConnectivity(BoardEntity, BinarySensorEntity):
     """Stays available when the Board is offline: it is what reports that."""
 
     _attr_name = "Connectivity"

@@ -10,8 +10,39 @@ ROOT = Path(__file__).parent.parent
 COMPONENT = ROOT / "custom_components" / "dingtian"
 
 
+def _entry() -> MockConfigEntry:
+    return MockConfigEntry(
+        domain="dingtian",
+        unique_id="47196",
+        title="Dingtian 47196",
+        data={"serial": "47196", "topic_base": "dingtian/relay47196"},
+    )
+
+
+async def test_board_is_stopped_when_setup_fails_after_it_started(hass, mqtt_mock):
+    from unittest.mock import patch
+
+    from custom_components.dingtian.board import Board
+
+    entry = _entry()
+    entry.add_to_hass(hass)
+
+    with (
+        patch(
+            "homeassistant.config_entries.ConfigEntries.async_forward_entry_setups",
+            side_effect=RuntimeError("boom"),
+        ),
+        patch.object(Board, "async_stop", autospec=True, side_effect=Board.async_stop) as stop,
+    ):
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.SETUP_ERROR
+    stop.assert_called_once()
+
+
 async def test_integration_sets_up_and_unloads_cleanly(hass, mqtt_mock):
-    entry = MockConfigEntry(domain="dingtian", data={}, title="Dingtian")
+    entry = _entry()
     entry.add_to_hass(hass)
 
     assert await hass.config_entries.async_setup(entry.entry_id)

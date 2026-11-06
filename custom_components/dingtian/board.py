@@ -8,6 +8,7 @@ never touch MQTT themselves.
 """
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -23,6 +24,12 @@ from .const import COUNT_FALLBACK, COUNT_WAIT_SECONDS, LOGGER
 
 _OUTPUT_TOPIC = re.compile(r"r(\d+)")
 _INPUT_TOPIC = re.compile(r"i(\d+)")
+# Kept in the per-topic store but not parsed: the serial (used for discovery)
+# and the JSON duplicates of r<n>/i<n>. Not "unrecognised", not logged.
+_KNOWN_IGNORED_TOPIC = re.compile(r"sn|relay\d+|input\d+")
+
+# Count topics and the Board attribute each one fills.
+_COUNT_TOPICS = {"relay_cnt": "_output_count", "input_cnt": "_input_count"}
 
 # Topics whose payload is kept as text on the Board, and the attribute for each.
 _TEXT_TOPICS = {
@@ -92,14 +99,13 @@ class Board:
     def _count_wait_over(self, _now: datetime) -> None:
         """No relay_cnt after the short wait: assume the usual 8 Outputs."""
         self._cancel_count_wait = None
-        if self._output_count is None:
-            LOGGER.debug("Board %s: no relay_cnt, assuming %s", self.serial, COUNT_FALLBACK)
-            self._output_count = COUNT_FALLBACK
-            self._notify()
-        if self._input_count is None:
-            LOGGER.debug("Board %s: no input_cnt, assuming %s", self.serial, COUNT_FALLBACK)
-            self._input_count = COUNT_FALLBACK
-            self._notify()
+        for topic, attribute in _COUNT_TOPICS.items():
+            if getattr(self, attribute) is None:
+                LOGGER.debug(
+                    "Board %s: no %s, assuming %s", self.serial, topic, COUNT_FALLBACK
+                )
+                setattr(self, attribute, COUNT_FALLBACK)
+                self._notify()
 
     # -- state ---------------------------------------------------------------
 
@@ -158,7 +164,10 @@ class Board:
             raise HomeAssistantError("The number of Outputs is not known yet")
         status = "ON" if on else "OFF"
         payload = " ".join(
-            f'{{"type":"ON/OFF","idx":"{n}","status":"{status}","time":"0","pass":"0"}}'
+            json.dumps(
+                {"type": "ON/OFF", "idx": str(n), "status": status, "time": "0", "pass": "0"},
+                separators=(",", ":"),
+            )
             for n in range(1, count + 1)
         )
         await mqtt.async_publish(self.hass, f"{self.topic_base}/in/control", payload)
@@ -178,6 +187,9 @@ class Board:
         ).strip()
         self.topic_values[topic] = TopicValue(payload, dt_util.utcnow())
 
+        if _KNOWN_IGNORED_TOPIC.fullmatch(topic):
+            self.unrecognised.discard(topic)
+            return
         if not self._parse(topic, payload):
             self.unrecognised.add(topic)
             LOGGER.debug("Board %s: ignoring %s = %r", self.serial, topic, payload)
@@ -192,15 +204,10 @@ class Board:
 
     def _parse(self, topic: str, payload: str) -> bool:
         """Update state from a known topic; False when the topic is not used."""
-        if topic == "relay_cnt":
+        if attribute := _COUNT_TOPICS.get(topic):
             if not payload.isdigit():
                 return False
-            self._output_count = max(self._output_count or 0, int(payload))
-            return True
-        if topic == "input_cnt":
-            if not payload.isdigit():
-                return False
-            self._input_count = max(self._input_count or 0, int(payload))
+            setattr(self, attribute, max(getattr(self, attribute) or 0, int(payload)))
             return True
         if (match := _INPUT_TOPIC.fullmatch(topic)) and payload in ("ON", "OFF"):
             self._inputs[int(match.group(1))] = payload == "ON"

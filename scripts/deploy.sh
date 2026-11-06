@@ -8,7 +8,10 @@ SRC="$(cd "$(dirname "$0")/.." && pwd)/custom_components/dingtian"
 DEST="$CONFIG_DIR/custom_components/dingtian"
 
 if [ -d "$DEST" ]; then
-  BACKUP="$DEST.bak-$(date +%Y%m%d-%H%M%S)"
+  # Outside custom_components/: HA scans every folder in there.
+  BACKUP_DIR="$CONFIG_DIR/custom_components_backups"
+  mkdir -p "$BACKUP_DIR"
+  BACKUP="$BACKUP_DIR/dingtian.bak-$(date +%Y%m%d-%H%M%S)"
   cp -R "$DEST" "$BACKUP"
   echo "Backed up $DEST to $BACKUP"
 fi

@@ -47,3 +47,37 @@ async def test_unrecognised_topics_and_payloads_are_listed_and_only_debug_logged
     assert data["unrecognised"] == {"mystery": "42", "r1": "SIDEWAYS"}
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
     assert any("mystery" in r.getMessage() for r in caplog.records)
+
+
+async def test_input_count_falls_back_like_output_count(hass, hass_client, mqtt_mock):
+    from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    entry = await _add_board(hass)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=30))
+    await hass.async_block_till_done()
+
+    data = await _download(hass, hass_client, entry)
+
+    assert data["output_count"] == 8
+    assert data["input_count"] == 8
+
+
+async def test_sn_and_duplicate_json_topics_are_known_not_unrecognised(
+    hass, hass_client, mqtt_mock, caplog
+):
+    entry = await _add_board(hass)
+    caplog.set_level(logging.DEBUG)
+    await _publish(hass, "sn", "47196")
+    await _publish(hass, "relay1", '{"type":"relay"}')
+    await _publish(hass, "input3", '{"type":"input"}')
+
+    data = await _download(hass, hass_client, entry)
+
+    assert data["unrecognised"] == {}
+    assert data["topics"]["sn"]["payload"] == "47196"
+    assert data["topics"]["relay1"]["payload"] == '{"type":"relay"}'
+    assert data["topics"]["input3"]["payload"] == '{"type":"input"}'
+    assert not [r for r in caplog.records if "ignoring" in r.getMessage()]

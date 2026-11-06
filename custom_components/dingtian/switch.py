@@ -6,11 +6,10 @@ from typing import Any
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .board import Board
-from .const import DOMAIN
+from .entity import BoardEntity
 
 
 async def async_setup_entry(
@@ -33,16 +32,12 @@ async def async_setup_entry(
     entry.async_on_unload(board.async_add_listener(add_missing_outputs))
 
 
-class OutputSwitch(SwitchEntity):
-    _attr_has_entity_name = True
-    _attr_should_poll = False
-
+class OutputSwitch(BoardEntity, SwitchEntity):
     def __init__(self, board: Board, number: int) -> None:
-        self._board = board
+        super().__init__(board)
         self._number = number
         self._attr_name = f"Output {number}"
         self._attr_unique_id = f"{board.serial}_output_{number}"
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, board.serial)})
 
     @property
     def available(self) -> bool:
@@ -51,9 +46,6 @@ class OutputSwitch(SwitchEntity):
     @property
     def is_on(self) -> bool | None:
         return self._board.output_is_on(self._number)
-
-    async def async_added_to_hass(self) -> None:
-        self.async_on_remove(self._board.async_add_listener(self.async_write_ha_state))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._board.async_set_output(self._number, True)

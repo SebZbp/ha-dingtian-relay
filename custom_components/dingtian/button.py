@@ -4,11 +4,10 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .board import Board
-from .const import DOMAIN
+from .entity import BoardEntity
 
 
 async def async_setup_entry(
@@ -23,16 +22,12 @@ async def async_setup_entry(
     )
 
 
-class AllOutputsButton(ButtonEntity):
-    _attr_has_entity_name = True
-    _attr_should_poll = False
-
+class AllOutputsButton(BoardEntity, ButtonEntity):
     def __init__(self, board: Board, key: str, name: str, on: bool) -> None:
-        self._board = board
+        super().__init__(board)
         self._on = on
         self._attr_name = name
         self._attr_unique_id = f"{board.serial}_{key}"
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, board.serial)})
 
     async def async_press(self) -> None:
         await self._board.async_set_all_outputs(self._on)

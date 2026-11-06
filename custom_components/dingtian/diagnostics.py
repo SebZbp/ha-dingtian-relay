@@ -18,7 +18,6 @@ async def async_get_config_entry_diagnostics(
     this entry's data, so they are never included.
     """
     board = entry.runtime_data
-    input_count = board.topic_values.get("input_cnt")
     return {
         "entry": {
             "title": entry.title,
@@ -26,11 +25,7 @@ async def async_get_config_entry_diagnostics(
             "data": dict(entry.data),
         },
         "output_count": board.output_count,
-        "input_count": (
-            int(input_count.payload)
-            if input_count is not None and input_count.payload.isdigit()
-            else None
-        ),
+        "input_count": board.input_count,
         "topics": {
             topic: {"payload": value.payload, "received": value.received.isoformat()}
             for topic, value in sorted(board.topic_values.items())
