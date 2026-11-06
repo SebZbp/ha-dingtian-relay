@@ -9,3 +9,7 @@ MANUFACTURER = "Dingtian"
 CONF_SERIAL = "serial"
 CONF_TOPIC_BASE = "topic_base"
 CONF_AREA = "area"
+
+PLATFORMS = ["switch"]
+COUNT_WAIT_SECONDS = 10
+COUNT_FALLBACK = 8
