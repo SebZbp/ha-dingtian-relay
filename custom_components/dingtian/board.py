@@ -40,6 +40,8 @@ class Board:
         self.topic_base = topic_base
         # Last value per topic, keyed by the topic below "<base>/out/".
         self.topic_values: dict[str, TopicValue] = {}
+        # Topics whose last message the Board model did not understand.
+        self.unrecognised: set[str] = set()
         self._outputs: dict[int, bool] = {}
         self._output_count: int | None = None
         self._listeners: list[CALLBACK_TYPE] = []
@@ -124,8 +126,10 @@ class Board:
         self.topic_values[topic] = TopicValue(payload, dt_util.utcnow())
 
         if not self._parse(topic, payload):
+            self.unrecognised.add(topic)
             LOGGER.debug("Board %s: ignoring %s = %r", self.serial, topic, payload)
             return
+        self.unrecognised.discard(topic)
         self._notify()
 
     @callback
