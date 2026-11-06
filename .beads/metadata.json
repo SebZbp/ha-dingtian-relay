@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "dingtian",
+  "project_id": "2e2efeff-c704-4bf9-80cb-80f1104b3039"
+}

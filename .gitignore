@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# UV lockfile (optional, depending on project preferences but keep the lock usually)
+# uv.lock
+
+# pytest cache
+.pytest_cache/
+
+# VS Code / IDEs
+.vscode/
+.idea/
+
+# Mac OS
+.DS_Store
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
