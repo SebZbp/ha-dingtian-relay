@@ -46,6 +46,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry[Board]) -> b
         hass, serial, entry.data.get(CONF_TOPIC_BASE) or f"dingtian/relay{serial}"
     )
     entry.runtime_data = board
+    if serial:
+        entry.async_on_unload(
+            board.async_add_listener(lambda: _sync_device(hass, entry, board))
+        )
     await board.async_start()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
@@ -56,3 +60,22 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry[Board]) -> 
     if unloaded := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         entry.runtime_data.async_stop()
     return unloaded
+
+
+def _sync_device(hass: HomeAssistant, entry: ConfigEntry[Board], board: Board) -> None:
+    """Copy the versions and IP the Board published into its device."""
+    registry = dr.async_get(hass)
+    device = registry.async_get_device(identifiers={(DOMAIN, board.serial)})
+    if device is None:
+        return
+    changes: dict[str, str] = {}
+    if board.hw_version and board.hw_version != device.hw_version:
+        changes["hw_version"] = board.hw_version
+    if board.sw_version and board.sw_version != device.sw_version:
+        changes["sw_version"] = board.sw_version
+    url = f"http://{board.ip}" if board.ip else None
+    if url and url != device.configuration_url:
+        changes["configuration_url"] = url
+    if changes:
+        LOGGER.debug("Board %s: device registry update %s", board.serial, changes)
+        registry.async_update_device(device.id, **changes)

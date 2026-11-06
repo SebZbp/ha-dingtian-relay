@@ -22,6 +22,14 @@ from .const import COUNT_FALLBACK, COUNT_WAIT_SECONDS, LOGGER
 
 _OUTPUT_TOPIC = re.compile(r"r(\d+)")
 
+# Topics whose payload is kept as text on the Board, and the attribute for each.
+_TEXT_TOPICS = {
+    "ip": "ip",
+    "mac": "mac",
+    "hw_version": "hw_version",
+    "sw_version": "sw_version",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class TopicValue:
@@ -42,6 +50,12 @@ class Board:
         self.topic_values: dict[str, TopicValue] = {}
         self._outputs: dict[int, bool] = {}
         self._output_count: int | None = None
+        # Identity and health, as published by the Board; None until seen.
+        self._lwt: str | None = None
+        self.ip: str | None = None
+        self.mac: str | None = None
+        self.hw_version: str | None = None
+        self.sw_version: str | None = None
         self._listeners: list[CALLBACK_TYPE] = []
         self._unsubscribe: CALLBACK_TYPE | None = None
         self._cancel_count_wait: CALLBACK_TYPE | None = None
@@ -83,6 +97,16 @@ class Board:
     def output_count(self) -> int | None:
         """Number of Outputs, or None while it is not known yet."""
         return self._output_count
+
+    @property
+    def available(self) -> bool:
+        """False only once the Board has said it is offline."""
+        return self._lwt != "offline"
+
+    @property
+    def online(self) -> bool | None:
+        """True/False as the Board reported in lwt_availability, None until then."""
+        return None if self._lwt is None else self._lwt == "online"
 
     def output_is_on(self, number: int) -> bool | None:
         """State the Board reported for an Output, None until it did."""
@@ -139,6 +163,12 @@ class Board:
             if not payload.isdigit():
                 return False
             self._output_count = max(self._output_count or 0, int(payload))
+            return True
+        if topic == "lwt_availability" and payload in ("online", "offline"):
+            self._lwt = payload
+            return True
+        if topic in _TEXT_TOPICS and payload:
+            setattr(self, _TEXT_TOPICS[topic], payload)
             return True
         if (match := _OUTPUT_TOPIC.fullmatch(topic)) and payload in ("ON", "OFF"):
             self._outputs[int(match.group(1))] = payload == "ON"
