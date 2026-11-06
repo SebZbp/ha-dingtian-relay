@@ -10,7 +10,9 @@ from .test_outputs import _add_board, _publish
 
 
 def _input_ids(hass: HomeAssistant) -> list[str]:
-    return sorted(s.entity_id for s in hass.states.async_all("binary_sensor"))
+    return sorted(
+        s.entity_id for s in hass.states.async_all("binary_sensor") if "_input_" in s.entity_id
+    )
 
 
 async def test_board_reporting_three_inputs_gets_three_binary_sensors(hass, mqtt_mock):

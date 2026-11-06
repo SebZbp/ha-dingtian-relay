@@ -1,8 +1,12 @@
-"""Input binary sensors: one per Input the Board reports."""
+"""Binary sensors: one per Input, plus the diagnostic connectivity sensor."""
 from __future__ import annotations
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -15,6 +19,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry[Board], async_add_entities: AddEntitiesCallback
 ) -> None:
     board = entry.runtime_data
+    async_add_entities([BoardConnectivity(board)])
     added = 0
 
     @callback
@@ -31,20 +36,45 @@ async def async_setup_entry(
     entry.async_on_unload(board.async_add_listener(add_missing_inputs))
 
 
-class InputBinarySensor(BinarySensorEntity):
+class _BoardBinarySensor(BinarySensorEntity):
     _attr_has_entity_name = True
     _attr_should_poll = False
 
-    def __init__(self, board: Board, number: int) -> None:
+    def __init__(self, board: Board) -> None:
         self._board = board
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, board.serial)})
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(self._board.async_add_listener(self.async_write_ha_state))
+
+
+class InputBinarySensor(_BoardBinarySensor):
+    def __init__(self, board: Board, number: int) -> None:
+        super().__init__(board)
         self._number = number
         self._attr_name = f"Input {number}"
         self._attr_unique_id = f"{board.serial}_input_{number}"
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, board.serial)})
+
+    @property
+    def available(self) -> bool:
+        return self._board.available
 
     @property
     def is_on(self) -> bool | None:
         return self._board.input_is_on(self._number)
 
-    async def async_added_to_hass(self) -> None:
-        self.async_on_remove(self._board.async_add_listener(self.async_write_ha_state))
+
+class BoardConnectivity(_BoardBinarySensor):
+    """Stays available when the Board is offline: it is what reports that."""
+
+    _attr_name = "Connectivity"
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, board: Board) -> None:
+        super().__init__(board)
+        self._attr_unique_id = f"{board.serial}_connectivity"
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._board.online

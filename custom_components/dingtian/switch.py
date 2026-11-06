@@ -45,6 +45,10 @@ class OutputSwitch(SwitchEntity):
         self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, board.serial)})
 
     @property
+    def available(self) -> bool:
+        return self._board.available
+
+    @property
     def is_on(self) -> bool | None:
         return self._board.output_is_on(self._number)
 
