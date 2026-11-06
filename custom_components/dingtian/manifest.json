@@ -1,0 +1,12 @@
+{
+  "domain": "dingtian",
+  "name": "Dingtian Relay",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/SebZbp/ha-dingtian-relay",
+  "issue_tracker": "https://github.com/SebZbp/ha-dingtian-relay/issues",
+  "dependencies": ["mqtt"],
+  "codeowners": ["@SebZbp"],
+  "requirements": [],
+  "iot_class": "local_push"
+}

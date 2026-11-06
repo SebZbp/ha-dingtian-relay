@@ -1,0 +1,7 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This Board is already configured."
+    }
+  }
+}

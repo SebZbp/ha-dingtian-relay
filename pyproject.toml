@@ -1,0 +1,12 @@
+[project]
+name = "ha-dingtian-relay"
+version = "0.1.0"
+description = "Home Assistant integration for Dingtian relay boards, discovered over MQTT"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest-homeassistant-custom-component",
+]
