@@ -10,6 +10,6 @@ CONF_SERIAL = "serial"
 CONF_TOPIC_BASE = "topic_base"
 CONF_AREA = "area"
 
-PLATFORMS = ["switch"]
+PLATFORMS = ["switch", "binary_sensor"]
 COUNT_WAIT_SECONDS = 10
 COUNT_FALLBACK = 8

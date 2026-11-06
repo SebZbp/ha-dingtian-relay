@@ -21,6 +21,7 @@ from homeassistant.util import dt as dt_util
 from .const import COUNT_FALLBACK, COUNT_WAIT_SECONDS, LOGGER
 
 _OUTPUT_TOPIC = re.compile(r"r(\d+)")
+_INPUT_TOPIC = re.compile(r"i(\d+)")
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +45,8 @@ class Board:
         self.unrecognised: set[str] = set()
         self._outputs: dict[int, bool] = {}
         self._output_count: int | None = None
+        self._inputs: dict[int, bool] = {}
+        self._input_count: int | None = None
         self._listeners: list[CALLBACK_TYPE] = []
         self._unsubscribe: CALLBACK_TYPE | None = None
         self._cancel_count_wait: CALLBACK_TYPE | None = None
@@ -78,6 +81,10 @@ class Board:
             LOGGER.debug("Board %s: no relay_cnt, assuming %s", self.serial, COUNT_FALLBACK)
             self._output_count = COUNT_FALLBACK
             self._notify()
+        if self._input_count is None:
+            LOGGER.debug("Board %s: no input_cnt, assuming %s", self.serial, COUNT_FALLBACK)
+            self._input_count = COUNT_FALLBACK
+            self._notify()
 
     # -- state ---------------------------------------------------------------
 
@@ -89,6 +96,15 @@ class Board:
     def output_is_on(self, number: int) -> bool | None:
         """State the Board reported for an Output, None until it did."""
         return self._outputs.get(number)
+
+    @property
+    def input_count(self) -> int | None:
+        """Number of Inputs, or None while it is not known yet."""
+        return self._input_count
+
+    def input_is_on(self, number: int) -> bool | None:
+        """Logical state the Board reported for an Input, None until it did."""
+        return self._inputs.get(number)
 
     @callback
     def async_add_listener(self, listener: CALLBACK_TYPE) -> CALLBACK_TYPE:
@@ -143,6 +159,14 @@ class Board:
             if not payload.isdigit():
                 return False
             self._output_count = max(self._output_count or 0, int(payload))
+            return True
+        if topic == "input_cnt":
+            if not payload.isdigit():
+                return False
+            self._input_count = max(self._input_count or 0, int(payload))
+            return True
+        if (match := _INPUT_TOPIC.fullmatch(topic)) and payload in ("ON", "OFF"):
+            self._inputs[int(match.group(1))] = payload == "ON"
             return True
         if (match := _OUTPUT_TOPIC.fullmatch(topic)) and payload in ("ON", "OFF"):
             self._outputs[int(match.group(1))] = payload == "ON"
