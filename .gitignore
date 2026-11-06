@@ -31,3 +31,6 @@ venv.bak/
 .beads-credential-key
 .beads/proxieddb/
 *.gate.lock*
+
+# Editor/plugin caches
+.impeccable/

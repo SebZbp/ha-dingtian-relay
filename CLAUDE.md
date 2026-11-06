@@ -58,20 +58,31 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 <!-- END BEADS INTEGRATION -->
 
 
-## Build & Test
-
-_Add your build and test commands here_
-
-```bash
-# Example:
-# npm install
-# npm test
-```
-
-## Architecture Overview
-
-_Add a brief overview of your project architecture_
-
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+- Use the vocabulary in `CONTEXT.md` (Board, Output, Input, Load…); respect `docs/adr/`.
+- No angle brackets in UI strings (frontend INVALID_TAG).
+- Logging at debug level under the integration's logger; no temporary warnings.
+- No commit/push and no change to `/Volumes/config` without the user's OK. Tag releases from main only.
+
+
+## Build & Test
+
+```bash
+uv sync        # install dependencies
+uv run pytest  # run the test suite
+```
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked with beads (`bd`, prefix `dingtian`); specs are saved in `docs/specs/`; `bd sync` runs automatically before every ticket state change. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles are beads labels combined with native statuses. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context. See `docs/agents/domain.md`. Lessons from the sister project ha-edisio-integration are in `docs/research/edisio-retro.md`.
