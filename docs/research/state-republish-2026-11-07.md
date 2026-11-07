@@ -8,10 +8,16 @@ Source: two diagnostics downloads of the same Board (serial 22333, firmware V3.1
 - **`sw_version` and `hw_version` are not part of the burst.** Both were last seen at 11:37:00, which is when HA started, 72 minutes before the first download. They may be retained, or the Board may send them only when a client connects. Not yet distinguished.
 - **No unrecognised topics** (`unrecognised` is empty in both downloads).
 
-## Consequence
+## Third download (13:06 UTC)
+- `hw_version` and `sw_version` arrived at 13:06:32, and a full burst followed at 13:06:41, nine seconds later. The burst is off the 13-minute cycle (the next one was due at 13:15:11), and 13:06:32 is the same kind of moment as 11:37:00, when HA started.
+- **Hypothesis:** the versions arrive at once whenever the integration subscribes (retained messages), and the Board sends a full burst shortly after something happens at HA's end. Two HA starts or reloads, 9 seconds between versions and burst, would make the wait after a restart about 10 seconds instead of 13 minutes.
+- **Not confirmed:** it is not known whether HA was restarted or the entry reloaded at 13:06 UTC, and the burst at the 11:37 start was overwritten before the first download. A reload of the entry while watching `r<n>` timestamps would confirm or refute this.
+
+## Consequence (if the hypothesis is wrong)
 After an HA restart, an Output shows "unknown" for up to 13 minutes, until the next burst. Nothing is retained for `r<n>`, so HA cannot read it back on subscribing.
 
 ## Still open
 - Is there a command that makes the Board publish its state at once? If so, the integration can send it on startup and the wait disappears.
 - Is `lwt_availability` retained, and does it go `offline` between bursts?
-- Are `sw_version` and `hw_version` retained?
+- Are `sw_version` and `hw_version` retained? (Probably yes: they arrive at the same instant as the subscription.)
+- Does the Board send a burst shortly after HA (re)subscribes, and what triggers it?
