@@ -1,0 +1,19 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "confirm": {
+        "title": "Add Dingtian Board",
+        "description": "A Dingtian Board with serial number {serial} was found on MQTT.",
+        "data": {
+          "name": "Name",
+          "area": "Area"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This Board is already configured.",
+      "invalid_serial": "The Board published an empty serial number."
+    }
+  }
+}

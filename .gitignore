@@ -34,3 +34,4 @@ venv.bak/
 
 # Editor/plugin caches
 .impeccable/
+.claude/worktrees/

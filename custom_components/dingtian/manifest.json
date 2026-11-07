@@ -1,0 +1,22 @@
+{
+  "domain": "dingtian",
+  "name": "Dingtian Relay",
+  "categories": [
+    "plugs_switches"
+  ],
+  "codeowners": [
+    "@SebZbp"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "mqtt"
+  ],
+  "documentation": "https://github.com/SebZbp/ha-dingtian-relay",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/SebZbp/ha-dingtian-relay/issues",
+  "mqtt": [
+    "dingtian/+/out/sn"
+  ],
+  "requirements": [],
+  "version": "0.1.0"
+}
