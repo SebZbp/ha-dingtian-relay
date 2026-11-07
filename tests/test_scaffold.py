@@ -81,3 +81,15 @@ def test_manifest_declares_mqtt_dependency_and_hacs_metadata_exists():
     assert manifest["config_flow"] is True
     assert "mqtt" in manifest["dependencies"]
     assert (ROOT / "hacs.json").exists()
+
+
+def test_manifest_keys_are_sorted_the_way_hassfest_wants():
+    import json
+    from pathlib import Path
+
+    manifest = json.loads(
+        (Path(__file__).parent.parent / "custom_components/dingtian/manifest.json").read_text()
+    )
+    keys = list(manifest)
+    assert keys[:2] == ["domain", "name"]
+    assert keys[2:] == sorted(keys[2:])
