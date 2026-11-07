@@ -1,6 +1,9 @@
 {
   "domain": "dingtian",
   "name": "Dingtian Relay",
+  "categories": [
+    "plugs_switches"
+  ],
   "codeowners": [
     "@SebZbp"
   ],
