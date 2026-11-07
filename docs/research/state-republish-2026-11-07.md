@@ -13,11 +13,14 @@ Source: two diagnostics downloads of the same Board (serial 22333, firmware V3.1
 - **Hypothesis:** the versions arrive at once whenever the integration subscribes (retained messages), and the Board sends a full burst shortly after something happens at HA's end. Two HA starts or reloads, 9 seconds between versions and burst, would make the wait after a restart about 10 seconds instead of 13 minutes.
 - **Not confirmed:** it is not known whether HA was restarted or the entry reloaded at 13:06 UTC, and the burst at the 11:37 start was overwritten before the first download. A reload of the entry while watching `r<n>` timestamps would confirm or refute this.
 
-## Consequence (if the hypothesis is wrong)
+## Confirmed (user, 2026-11-07)
+HA was restarted at about 13:06:32 UTC and diagnostics were downloaded as soon as the device was available. So the full burst arrives about 9 seconds after HA starts. **After an HA restart, Outputs and Inputs are known within about 10 seconds**, without any refresh command from the integration. The Board keeps republishing every 13 minutes regardless. What prompts the burst after a restart (HA's birth message, or the new subscription) is not known and does not matter for the integration.
+
+## Consequence if the Board did not respond to a restart (not the case)
 After an HA restart, an Output shows "unknown" for up to 13 minutes, until the next burst. Nothing is retained for `r<n>`, so HA cannot read it back on subscribing.
 
 ## Still open
-- Is there a command that makes the Board publish its state at once? If so, the integration can send it on startup and the wait disappears.
+- Refresh command: not needed, since the Board already publishes about 10 seconds after a restart.
 - Is `lwt_availability` retained, and does it go `offline` between bursts?
 - Are `sw_version` and `hw_version` retained? (Probably yes: they arrive at the same instant as the subscription.)
 - Does the Board send a burst shortly after HA (re)subscribes, and what triggers it?
